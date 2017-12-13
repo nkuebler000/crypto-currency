@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, FlatList, Text } from 'react-native';
+import { View, FlatList, ListView, RefreshControl } from 'react-native';
 import { List, ListItem, SearchBar, ButtonGroup } from 'react-native-elements';
 import { connect } from 'react-redux';
 import appStyles from '../styles/app';
@@ -14,11 +14,20 @@ class Main extends React.Component {
     super(props);
     this.searchBarOnChangeText = this.searchBarOnChangeText.bind(this);
     this.sortUpdateIndex = this.sortUpdateIndex.bind(this);
+    this.handleRefresh = this.handleRefresh.bind(this);
     this.sortFn = this.sortFn.bind(this);
     this.state = {
       currencyFilter: null,
-      sortSelectedIndex: 0
+      sortSelectedIndex: 0,
+      refreshing: false,
     };
+  }
+
+  onRefresh() {
+    this.setState({refreshing: true});
+    /*fetchData().then(() => {
+      this.setState({refreshing: false});
+    });*/
   }
 
   componentWillMount(){
@@ -36,6 +45,10 @@ class Main extends React.Component {
 
   sortUpdateIndex (selectedIndex) {
     this.setState({ sortSelectedIndex: selectedIndex });
+  }
+
+  handleRefresh(){
+    this.props.dispatch(getTicker());
   }
 
   sortFn (a,b) {
@@ -77,41 +90,42 @@ class Main extends React.Component {
           containerStyle={{height: 25}}
         />
         <List containerStyle={appStyles.list}>
-          <FlatList data={
-            this.props.ticker.tickerInfo &&
-            this.props.ticker.tickerInfo
-              .filter(tickerInfo => {
-                if (this.state.currencyFilter !== null) {
-                  return tickerInfo.name.startsWith(this.state.currencyFilter) || tickerInfo.symbol.startsWith(this.state.currencyFilter);
-                } else {
-                  return tickerInfo;
+            <FlatList
+              data={
+                this.props.ticker.tickerInfo &&
+                this.props.ticker.tickerInfo.filter(tickerInfo => {
+                  if (this.state.currencyFilter !== null) {
+                    return tickerInfo.name.startsWith(this.state.currencyFilter) || tickerInfo.symbol.startsWith(this.state.currencyFilter);
+                  } else {
+                    return tickerInfo;
+                  }
+                }).sort(this.sortFn)
+              }
+              keyExtractor={item => {
+                return item.symbol;
+              }}
+              renderItem={({item}) => {
+                  let avatar = icons[item.symbol];
+                  if (!avatar) {
+                    avatar = icons['default'];
+                  }
+                  return (
+                    <ListItem
+                      roundAvatar
+                      title={item.name}
+                      subtitle={`Symbol: ${item.symbol} | Price USD: ${accounting.formatMoney(item.price_usd)}`}
+                      avatar={avatar}
+                      onPress={() => {
+                        Actions.detail({item: item, title: item.name});
+                      }}
+                    />
+                  );
                 }
-              }).sort(this.sortFn)
-          }
-            keyExtractor={item => {
-              return item.symbol;
-            }}
-            renderItem={({item}) => {
-              let avatar = icons[item.symbol];
-              if (!avatar) {
-                avatar = icons['default'];
               }
-                return (
-                  <ListItem
-                    roundAvatar
-                    title={item.name}
-                    subtitle={`Symbol: ${item.symbol} | Price USD: ${accounting.formatMoney(item.price_usd)}`}
-                    avatar={avatar}
-                    onPress={() => {
-                      Actions.detail({item: item, title: item.name});
-                    }}
-                  />
-                );
-              }
-            }
-          />
-        </List>
-
+              refreshing={this.state.refreshing}
+              onRefresh={this.handleRefresh}
+            />
+          </List>
       </View>
     );
   }
