@@ -18,16 +18,8 @@ class Main extends React.Component {
     this.sortFn = this.sortFn.bind(this);
     this.state = {
       currencyFilter: null,
-      sortSelectedIndex: 0,
-      refreshing: false,
+      sortSelectedIndex: 0
     };
-  }
-
-  onRefresh() {
-    this.setState({refreshing: true});
-    /*fetchData().then(() => {
-      this.setState({refreshing: false});
-    });*/
   }
 
   componentWillMount(){
@@ -122,7 +114,7 @@ class Main extends React.Component {
                   );
                 }
               }
-              refreshing={this.state.refreshing}
+              refreshing={false}
               onRefresh={this.handleRefresh}
             />
           </List>
